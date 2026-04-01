@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "review_id": "review-0001",
+  "reviewer_id": "external-reviewer",
+  "review_date": "2026-04-01",
+  "repository": "stage244",
+  "reviewed_commit": "replace-with-commit",
+  "scope_document": "docs/reviewer_scope.md",
+  "reviewed_artifacts": [
+    "README.md",
+    "docs/external_reviewer_policy.md",
+    "docs/reviewer_quickstart.md",
+    "docs/review_verdict_levels.md",
+    "out/review_packets/review_request.json"
+  ],
+  "verdict": "reviewed",
+  "notes": "Replace this field with the actual reviewer notes.",
+  "acknowledgment": {
+    "type": "unsigned",
+    "reference": "none"
+  }
+}

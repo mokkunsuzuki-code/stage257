@@ -1,426 +1,164 @@
-# Stage243: External Reviewer Onboarding Framework
+# Stage244: Real External Reviewer Activation
 
 MIT License © 2025 Motohiro Suzuki
 
----
-
 ## Overview
 
-Stage243 prepares this repository for real independent external reviewers.
+Stage244 activates a real external reviewer path for QSP.
 
-This stage does not claim that a real external reviewer is already active in production.
-Instead, it defines the onboarding structure required to activate one safely and transparently in a future stage.
+The goal of this stage is not to claim that the entire repository is fully approved by outsiders.
+The goal is to make external participation realistic, bounded, documented, and recordable.
 
-Stage242 introduced the rule that an external reviewer is required.
+This stage moves the project from:
 
-Stage243 adds the operational layer needed to make that reviewer real later.
-
----
-
-## What Stage243 Adds
-
-- reviewer onboarding documentation
-- reviewer invitation template
-- reviewer metadata example
-- reviewer registry structure
-- reviewer registration tooling
-- fail-safe registry verification
-- Stage243-specific CI verification
-
----
-
-## Why This Stage Matters
-
-A policy can say that an external reviewer is required.
-
-But unless the project defines:
-
-- how a reviewer is added
-- what metadata is recorded
-- how the public key is registered
-- how activation is validated
-- how failure is handled before activation
-
-the requirement remains conceptual.
-
-Stage243 turns that concept into an operationally defined process.
-
----
-
-## Security Meaning
-
-This stage upgrades the project from:
-
-- external reviewer exists in policy
+- reviewer roles exist
+- reviewer onboarding exists
 
 to:
 
-- external reviewer onboarding is operationally defined
+- a real third party can receive a scoped review packet
+- verification steps are documented
+- a review record can be created and validated
 
-This is an important shift from trust design to trust preparation.
-
----
-
-## Key Property
-
-If no active external reviewer is registered, verification fails safely.
-
-This prevents the repository from silently behaving as if independent external review already exists when it does not.
+That is why this stage is called Real External Reviewer Activation.
 
 ---
 
-## Registry Model
+## Why this stage matters
 
-Reviewer state is stored in:
+Security projects become stronger when they move beyond self-assertion.
 
-```text
-metadata/reviewers/reviewer_registry.yaml
+Before this stage, the project already had:
 
-The registry supports:
+- claim and evidence structure
+- CI-linked verification
+- signed evidence
+- transparency models
+- threshold-style reviewer workflow
+- reviewer onboarding
 
-empty initial state
-active reviewer validation
-public key path checking
-future reviewer activation without redesign
-Documentation Added
-Reviewer onboarding guide
-docs/reviewer_onboarding.md
+Stage244 adds the next important step:
 
-Defines:
+a practical path for real third-party participation
 
-reviewer independence expectations
-key ownership rules
-public-key-only repository model
-activation process
-future real reviewer path
-Reviewer invitation template
-docs/reviewer_invitation_template.md
+This increases value in three directions:
 
-Provides a minimal invitation format for future independent collaborators.
-
-Reviewer metadata example
-docs/reviewer_metadata_example.yaml
-
-Shows the expected structure for a future active reviewer.
-
-Tooling Added
-Register reviewer
-tools/register_reviewer.py
-
-Registers reviewer metadata into the registry.
-
-Verify registry
-tools/verify_stage243_registry.py
-
-Checks that:
-
-the registry exists
-an active reviewer is present when required
-the referenced reviewer public key exists
-Build Stage243 manifest
-tools/build_stage243_manifest.py
-
-Builds a manifest of the files that define the onboarding framework.
-
-Run demo
-tools/run_stage243_demo.sh
-
-Demonstrates:
-
-safe failure with no active reviewer
-example reviewer registration
-successful registry validation
-Policy
-
-Stage243 policy is defined in:
-
-docs/stage243_policy.yaml
-
-It includes:
-
-threshold: 2
-external reviewer required
-minimum independence groups: 2
-reviewer registry path
-active reviewer requirement
-Demo
-
-Run:
-
-./tools/run_stage243_demo.sh
-
-Expected behavior:
-
-empty registry fails safely
-example reviewer can be registered
-registry validation then succeeds
-Tests
-
-Run locally:
-
-pytest -q
-
-Stage243-specific CI runs the onboarding workflow and validates the Stage243 registry path successfully.
-
-CI Status
-
-The stage243-reviewer-onboarding workflow is now passing, which confirms that the onboarding framework works in GitHub Actions as well as locally.
-
-What Stage243 Does Not Claim
-
-Stage243 does not claim:
-
-that a real external reviewer is already active in production
-that real third-party review has already been completed
-that reviewer identity has already been independently verified
-
-Instead, Stage243 makes a narrower and honest claim:
-
-the repository is now prepared to onboard a real external reviewer safely
-Future Activation Path
-
-A future stage can activate a real reviewer by:
-
-having the reviewer generate a keypair on their own device
-receiving only the public key
-registering reviewer metadata
-marking the reviewer active
-collecting an external signature
-verifying approval under policy
-Significance
-
-Stage242 introduced independent approval as a rule.
-
-Stage243 prepares the project to make that independence real in operation.
-
-This stage is the bridge from policy-level independence to real-world reviewer onboarding.
-
-Next Direction
-
-Natural next steps include:
-
-activating a real external reviewer
-registering a real reviewer public key
-collecting a real external signature
-defining reviewer lifecycle rules
-adding revocation / rotation support
+1. Research credibility
+2. Operational realism
+3. External evaluation readiness
 
 ---
 
-# GitHub更新
+## What Stage244 adds
 
-```bash
-cd ~/Desktop/test/stage243
+Stage244 introduces:
 
-cat > README.md << 'EOF'
-# Stage243: External Reviewer Onboarding Framework
+- external reviewer policy
+- explicit review scope boundaries
+- quickstart instructions for real reviewers
+- verdict level definitions
+- review request packet generation
+- review record validation
+- example external review record
 
-MIT License © 2025 Motohiro Suzuki
+This means the repository now supports a bounded review lifecycle:
 
----
-
-## Overview
-
-Stage243 prepares this repository for real independent external reviewers.
-
-This stage does not claim that a real external reviewer is already active in production.
-Instead, it defines the onboarding structure required to activate one safely and transparently in a future stage.
-
-Stage242 introduced the rule that an external reviewer is required.
-
-Stage243 adds the operational layer needed to make that reviewer real later.
+1. prepare a review packet
+2. send it to a real external reviewer
+3. let the reviewer inspect or reproduce the declared scope
+4. record the outcome in a structured review record
 
 ---
 
-## What Stage243 Adds
+## Repository structure
 
-- reviewer onboarding documentation
-- reviewer invitation template
-- reviewer metadata example
-- reviewer registry structure
-- reviewer registration tooling
-- fail-safe registry verification
-- Stage243-specific CI verification
+docs/
+- external_reviewer_policy.md
+- reviewer_scope.md
+- reviewer_quickstart.md
+- review_verdict_levels.md
 
----
+review_records/
+- template_review_record.json
+- example_external_review.json
 
-## Why This Stage Matters
+tools/
+- generate_review_request.py
+- verify_review_record.py
+- run_stage244_real_activation.sh
 
-A policy can say that an external reviewer is required.
+tests/
+- test_review_record.py
 
-But unless the project defines:
-
-- how a reviewer is added
-- what metadata is recorded
-- how the public key is registered
-- how activation is validated
-- how failure is handled before activation
-
-the requirement remains conceptual.
-
-Stage243 turns that concept into an operationally defined process.
+out/
+- review_packets/
+- review_status/
 
 ---
 
-## Security Meaning
+## How to run
 
-This stage upgrades the project from:
+Generate the review request packet:
 
-- external reviewer exists in policy
+python3 tools/generate_review_request.py --reviewer-id external-demo --commit demo-commit --repo stage244
+
+Verify the example review record:
+
+python3 tools/verify_review_record.py --input review_records/example_external_review.json
+
+Run the full Stage244 flow:
+
+./tools/run_stage244_real_activation.sh
+
+---
+
+## Output artifacts
+
+After running the stage script, the repository produces:
+
+- out/review_packets/review_request.json
+- out/review_packets/review_request.md
+- out/review_status/review_record_check.txt
+
+These artifacts show that:
+
+- a review request packet can be generated
+- a review record can be validated
+- a real external review process is now structurally supported
+
+---
+
+## Limitations
+
+Stage244 does not claim:
+
+- full third-party security certification
+- full repository audit
+- production approval
+- formal proof endorsement
+
+This stage only claims that:
+
+a real external reviewer can now participate in a bounded, documented, and recorded way
+
+---
+
+## Recommended next step
+
+A natural next step after Stage244 is:
+
+Stage245: First Real External Review Record
+
+---
+
+## Conclusion
+
+Stage244 is the transition from reviewer design to reviewer activation.
+
+It changes the repository from:
+
+- we defined reviewer roles
 
 to:
 
-- external reviewer onboarding is operationally defined
-
-This is an important shift from trust design to trust preparation.
-
----
-
-## Key Property
-
-If no active external reviewer is registered, verification fails safely.
-
-This prevents the repository from silently behaving as if independent external review already exists when it does not.
-
----
-
-## Registry Model
-
-Reviewer state is stored in:
-
-```text
-metadata/reviewers/reviewer_registry.yaml
-
-The registry supports:
-
-empty initial state
-active reviewer validation
-public key path checking
-future reviewer activation without redesign
-Documentation Added
-Reviewer onboarding guide
-docs/reviewer_onboarding.md
-
-Defines:
-
-reviewer independence expectations
-key ownership rules
-public-key-only repository model
-activation process
-future real reviewer path
-Reviewer invitation template
-docs/reviewer_invitation_template.md
-
-Provides a minimal invitation format for future independent collaborators.
-
-Reviewer metadata example
-docs/reviewer_metadata_example.yaml
-
-Shows the expected structure for a future active reviewer.
-
-Tooling Added
-Register reviewer
-tools/register_reviewer.py
-
-Registers reviewer metadata into the registry.
-
-Verify registry
-tools/verify_stage243_registry.py
-
-Checks that:
-
-the registry exists
-an active reviewer is present when required
-the referenced reviewer public key exists
-Build Stage243 manifest
-tools/build_stage243_manifest.py
-
-Builds a manifest of the files that define the onboarding framework.
-
-Run demo
-tools/run_stage243_demo.sh
-
-Demonstrates:
-
-safe failure with no active reviewer
-example reviewer registration
-successful registry validation
-Policy
-
-Stage243 policy is defined in:
-
-docs/stage243_policy.yaml
-
-It includes:
-
-threshold: 2
-external reviewer required
-minimum independence groups: 2
-reviewer registry path
-active reviewer requirement
-Demo
-
-Run:
-
-./tools/run_stage243_demo.sh
-
-Expected behavior:
-
-empty registry fails safely
-example reviewer can be registered
-registry validation then succeeds
-Tests
-
-Run locally:
-
-pytest -q
-
-Stage243-specific CI runs the onboarding workflow and validates the Stage243 registry path successfully.
-
-CI Status
-
-The stage243-reviewer-onboarding workflow is now passing.
-
-What Stage243 Does Not Claim
-
-Stage243 does not claim:
-
-that a real external reviewer is already active in production
-that real third-party review has already been completed
-that reviewer identity has already been independently verified
-
-Instead, Stage243 makes a narrower and honest claim:
-
-the repository is now prepared to onboard a real external reviewer safely
-Future Activation Path
-
-A future stage can activate a real reviewer by:
-
-having the reviewer generate a keypair on their own device
-receiving only the public key
-registering reviewer metadata
-marking the reviewer active
-collecting an external signature
-verifying approval under policy
-Significance
-
-Stage242 introduced independent approval as a rule.
-
-Stage243 prepares the project to make that independence real in operation.
-
-This stage is the bridge from policy-level independence to real-world reviewer onboarding.
-
-Next Direction
-
-Natural next steps include:
-
-activating a real external reviewer
-registering a real reviewer public key
-collecting a real external signature
-defining reviewer lifecycle rules
-adding revocation / rotation support
-EOF
-
-git add README.md
-git commit -m "Stage243: finalize README for reviewer onboarding framework"
-git push
+- a real external reviewer can actually participate, reproduce, and leave a recorded verdict

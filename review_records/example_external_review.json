@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "review_id": "review-demo-0001",
+  "reviewer_id": "external-demo",
+  "review_date": "2026-04-01",
+  "repository": "stage244",
+  "reviewed_commit": "demo-commit",
+  "scope_document": "docs/reviewer_scope.md",
+  "reviewed_artifacts": [
+    "README.md",
+    "docs/external_reviewer_policy.md",
+    "docs/reviewer_quickstart.md",
+    "docs/review_verdict_levels.md",
+    "out/review_packets/review_request.json"
+  ],
+  "verdict": "reproduced",
+  "notes": "The documented packet generation and review record validation steps were reproduced successfully within the declared scope.",
+  "acknowledgment": {
+    "type": "unsigned",
+    "reference": "reviewer self-asserted"
+  }
+}
