@@ -1,130 +1,127 @@
-QSP Stage248: Review Checkpoint Chain
-
-MIT License © 2025 Motohiro Suzuki
+Stage249: External Timestamp Anchoring (GitHub Actions)
 
 ## Overview
 
-Stage248 extends Stage247 by adding a signed checkpoint chain for review history.
+Stage249 introduces **external timestamp anchoring** by binding the latest
+checkpoint state to a publicly observable GitHub Actions execution.
 
-Stage247 established that the review history itself is tamper-evident.
+This stage does NOT claim a trusted timestamp authority (TSA) or blockchain anchoring.
+Instead, it provides a **reproducible, verifiable, and externally observable timestamp binding**
+based on CI execution metadata.
 
-Stage248 adds a stronger property:
+---
 
-- the order of historical review states becomes verifiable
-- checkpoints are append-only
-- previous states cannot be silently rewritten
+## What This Stage Achieves
 
-This introduces a lightweight time-ordered audit model for review transparency.
+- Binds checkpoint state → anchor request → external execution
+- Generates deterministic anchor request with SHA256
+- Records GitHub Actions execution metadata as a receipt
+- Enables third-party verification of request ↔ receipt consistency
 
-## What this stage adds
+---
 
-### Review log
+## Architecture
 
-The review history is aggregated and signed:
 
-- `out/review_log/review_log.json`
-- `out/review_log/review_log_hash.txt`
-- `out/review_log/review_log.sig`
+Review Log
+↓
+Checkpoint Chain (Stage248)
+↓
+Anchor Request (Stage249 local)
+↓
+GitHub Actions Run (external execution)
+↓
+Receipt (github_anchor_receipt.json)
+↓
+Verification
 
-### Checkpoint chain
 
-Each review-log state is committed into a checkpoint chain:
+---
 
-- `out/review_log_history/checkpoint_0001.json`
-- `out/review_log_history/checkpoint_index.json`
+## Key Files
 
-Each checkpoint contains:
+### Anchor Request
 
-- checkpoint id
-- timestamp
-- review log hash
-- merkle root
-- previous checkpoint hash
-- previous checkpoint file
-- checkpoint hash
-- signature
+- `out/anchors/anchor_request.json`
+- `out/anchors/anchor_request.sha256`
+- `out/anchors/history/request_0001.json`
 
-## Security meaning
+### External Receipt
 
-Stage247:
-- review history is tamper-evident
+- `github_anchor_receipt.json`
+- `github_anchor_receipt.sha256`
 
-Stage248:
-- review history becomes ordered and append-only
+### Tools
 
-This means the system can detect:
+- `tools/generate_anchor_request.py`
+- `tools/record_github_anchor.py`
+- `tools/verify_external_anchor.py`
 
-- silent modification
-- silent replacement
-- broken checkpoint continuity
-- history rewriting
+---
 
-## Repository structure
+## How It Works
 
-```text
-tools/
-  build_review_log.py
-  verify_review_log.py
-  create_review_checkpoint.py
-  verify_checkpoint_chain.py
-  run_stage247_review_transparency.sh
-  run_stage248_checkpoint_chain.sh
+### 1. Generate Anchor Request
 
-out/review_log/
-  review_log.json
-  review_log_hash.txt
-  review_log.sig
+```bash
+./tools/run_stage249_anchor.sh
 
-out/review_log_history/
-  checkpoint_0001.json
-  checkpoint_index.json
+This creates:
 
-tests/
-  test_review_log.py
-  test_stage248_checkpoint_chain.py
-How to run
-Run Stage248
-bash tools/run_stage248_checkpoint_chain.sh
-Run tests
-pytest -q
-Continuous verification
+deterministic request JSON
+SHA256 binding
+request history
+2. GitHub Actions Execution
 
-GitHub Actions can continuously verify:
+Workflow:
 
-review log generation
-review log signature verification
-checkpoint generation
-checkpoint chain verification
-repository tests
+.github/workflows/stage249-external-time-anchor.yml
 
-If checkpoint integrity breaks, verification fails.
+Performs:
 
-Why this matters
+reconstruct transparency input
+generate anchor request
+record GitHub execution metadata
+produce receipt
+3. Verify External Anchor
+python3 tools/verify_external_anchor.py \
+  --request out/anchors/anchor_request.json \
+  --receipt github_anchor_receipt.json
+Example Verification Output
+[OK] external anchor verified
+[OK] request_sha256: <hash>
+[OK] checkpoint_id: 1
+[OK] run_url: https://github.com/.../actions/runs/<id>
+Security Meaning
 
-This stage changes the project from:
+This stage proves:
 
-"review history can be verified"
+the checkpoint state existed
+the exact request was hashed
+that hash appeared in a public CI execution
+the execution time is externally observable
+What This Is NOT
+Not RFC3161 TSA
+Not blockchain anchoring
+Not absolute timestamp guarantee
+Why This Matters
+No hidden trust assumptions
+Fully reproducible
+Publicly observable
+Verifiable by third parties
+Design Philosophy
 
-to:
+Do not claim stronger security than what can be verified.
 
-"review history can be verified as an append-only sequence"
+Stage249 intentionally provides:
 
-That is a stronger audit property and is closer to a transparency-log model.
+minimal assumptions
+maximum transparency
+reproducible verification
+Next Steps
+Stage250: Release Anchoring
+Multi-anchor (CI / mirror / distributed)
+External verification ecosystem
+License
 
-Limits
-
-Stage248 is a lightweight repository-level checkpoint chain.
-
-It is not yet:
-
-a public transparency service
-a federated log
-an external timestamp authority
-
-Those can come in later stages.
-
-Conclusion
-
-Stage248 introduces an append-only checkpoint chain for review history.
-
-This strengthens QSP from a tamper-evident review log into a time-ordered audit trail.
+MIT License © 2025 Motohiro Suzuki
