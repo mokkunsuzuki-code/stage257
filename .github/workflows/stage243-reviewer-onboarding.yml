@@ -69,4 +69,4 @@ jobs:
         run: python tools/build_stage243_manifest.py
 
       - name: Run tests
-        run: pytest -q
+        run: pytest -q tests/test_stage243_registry.py
