@@ -1,167 +1,125 @@
-# Stage247: Review Transparency Log
+QSP Stage247: Review Transparency (Tamper-Evident & Continuously Verified)
 
 MIT License © 2025 Motohiro Suzuki
 
+---
+
 ## Overview
 
-Stage247 adds **review transparency** to QSP.
+Stage247 introduces **review transparency** into QSP by making the entire review history:
 
-Previous stages demonstrated that a review existed.
+- tamper-evident
+- cryptographically signed
+- independently verifiable
+- continuously verified via CI
 
-This stage goes one step further:
+This stage moves from:
 
-- the full review history is recorded
-- the history is hashed
-- the resulting log is signed
-- the log can be independently verified
+- Stage245: "a review exists"
 
-This turns review evidence into a **tamper-evident audit artifact**.
+to:
 
-## Why this stage matters
+- Stage247: "the review history itself is verifiable and cannot be silently modified"
 
-Before Stage247:
+---
 
-- "a review happened"
+## What This Stage Adds
 
-After Stage247:
+### Review Log
 
-- "the review history itself is auditable"
+All review records are aggregated into a single log:
 
-This improves external trust for reviewers, organizations, and security auditors.
-
-## What is included
-
-### Review records
-
-Source review records are stored in:
-
-- `review_records/*.json`
-
-### Review log artifacts
-
-Generated artifacts are stored in:
-
-- `out/review_log/review_log.json`
-- `out/review_log/review_log_hash.txt`
-- `out/review_log/review_log.sig`
-
-### Tooling
-
-- `tools/build_review_log.py`
-- `tools/verify_review_log.py`
-- `tools/run_stage247_review_transparency.sh`
-
-### Tests
-
-- `tests/test_review_log.py`
-
-## Review transparency model
-
-Stage247 uses the following model:
-
-Review Records
-↓
-Leaf Hashes
-↓
-Merkle-style Root
-↓
-Canonical Review Log Hash
-↓
-Ed25519 Signature
-↓
-Independent Verification
-
-## Repository structure
-
-```text
-review_records/
-  review_001.json
-  review_002.json
-  review_003.json
-
-tools/
-  build_review_log.py
-  verify_review_log.py
-  run_stage247_review_transparency.sh
 
 out/review_log/
-  review_log.json
-  review_log_hash.txt
-  review_log.sig
+review_log.json
+review_log_hash.txt
+review_log.sig
 
-tests/
-  test_review_log.py
 
-docs/
-  review_transparency.md
-How to run
-1. Install dependencies
-python3 -m pip install --upgrade pip
-python3 -m pip install cryptography pytest
-2. Run Stage247
-chmod +x tools/run_stage247_review_transparency.sh
-./tools/run_stage247_review_transparency.sh
-3. Run tests
-pytest -q
-Manual verification
+### Tamper-Evidence
 
-You can also verify directly:
+- SHA-256 hash of the full review log
+- Ed25519 signature over the hash
+- Any modification breaks verification
 
+### Merkle-style Aggregation
+
+- Each review is hashed
+- A combined root is computed
+- Enables integrity validation across the entire history
+
+### Independent Verification
+
+Anyone can verify:
+
+```bash
 python3 tools/verify_review_log.py \
   --review-log out/review_log/review_log.json \
   --hash-file out/review_log/review_log_hash.txt \
   --sig-file out/review_log/review_log.sig \
   --public-key keys/owner_public.pem
-Security properties
-Integrity
+Continuous Verification (GitHub Actions)
 
-If any review entry changes, verification fails.
+On every push:
 
-Tamper Detection
+review log is rebuilt
+hash is recomputed
+signature is generated and verified
+tests are executed
 
-If the review log or its hash is modified, the mismatch is detected.
+If anything breaks, CI fails.
 
-Signature Binding
+This ensures:
 
-The review log hash is signed with an Ed25519 private key.
+The review transparency model is continuously enforced.
 
-Auditability
+Quick Start
+git clone https://github.com/mokkunsuzuki-code/stage247.git
+cd stage247
 
-A third party can verify the review history without trusting local claims.
+./tools/run_stage247_review_transparency.sh
+pytest -q
+Security Meaning
 
-Threat model note
+This stage establishes:
 
-Stage247 improves integrity and auditability of review history.
+Integrity: review history cannot be altered undetected
+Authenticity: signed evidence proves origin
+Transparency: full history is visible and verifiable
+Reproducibility: anyone can re-run verification
+Continuity: CI ensures ongoing correctness
+Design Principle
 
-It does not prove that a reviewer is correct.
-It proves that the recorded review history has not been silently changed.
+QSP follows:
 
-Relationship to earlier stages
-Stage245: review evidence exists
-Stage246: reviewer process is structured
-Stage247: review history becomes tamper-evident and independently verifiable
-Intended external meaning
+Assumption → Claim → Test → Evidence → Verification
 
-For external reviewers or organizations such as OpenSSF or infrastructure/security teams,
-this stage changes the project from:
+Stage247 extends this with:
 
-"interesting review evidence"
+Review → Review Log → Hash → Signature → CI Verification
+Positioning
 
-to:
+This is not:
 
-"review history with audit properties"
-Limitations
+a new cryptographic primitive
+a new QKD proof
 
-This is a lightweight Merkle-style construction for repository-level transparency.
+This is:
 
-It is not yet:
+a reproducible and auditable verification framework for security claims
 
-a public append-only service
-a federated transparency network
-a global transparency protocol
+Future Work
+Stage248: append-only review history (checkpointing)
+external reviewer signatures
+transparency log federation
+Conclusion
 
-Those can come in later stages.
+Stage247 transforms review evidence into:
 
-License
+a tamper-evident, continuously verified audit artifact
 
-This project is licensed under the MIT License.
+This enables stronger trust for:
+
+researchers
+security engineers
+organizations evaluating QSP
