@@ -1,136 +1,167 @@
-# Stage245: First Real Review Record
+# Stage247: Review Transparency Log
 
 MIT License © 2025 Motohiro Suzuki
 
 ## Overview
 
-Stage245 introduces the first concrete review record in the QSP reviewer flow.
+Stage247 adds **review transparency** to QSP.
 
-This stage demonstrates that:
+Previous stages demonstrated that a review existed.
 
-- a review has actually occurred
-- the review result is recorded
-- the record is signed
-- the signature can be verified
+This stage goes one step further:
 
-This is a transition from "review is possible" to "review has happened".
+- the full review history is recorded
+- the history is hashed
+- the resulting log is signed
+- the log can be independently verified
 
----
+This turns review evidence into a **tamper-evident audit artifact**.
 
 ## Why this stage matters
 
-Before Stage245:
+Before Stage247:
 
-- review workflow existed
-- external participation was possible
-- review records could be defined
+- "a review happened"
 
-After Stage245:
+After Stage247:
 
-👉 a real review record exists  
-👉 it is cryptographically signed  
-👉 it can be independently verified  
+- "the review history itself is auditable"
 
-This significantly increases:
+This improves external trust for reviewers, organizations, and security auditors.
 
-- research credibility
-- auditability
-- reproducibility
+## What is included
 
----
+### Review records
 
-## What Stage245 adds
+Source review records are stored in:
 
-- first concrete review record (`real_review_record.json`)
-- signature over the review record (`real_review_record.sig`)
-- public verification flow
-- example documentation for real review
+- `review_records/*.json`
 
----
+### Review log artifacts
 
-## Review meaning
+Generated artifacts are stored in:
 
-This stage does NOT claim:
+- `out/review_log/review_log.json`
+- `out/review_log/review_log_hash.txt`
+- `out/review_log/review_log.sig`
 
-- full audit
-- full repository approval
-- production certification
+### Tooling
 
-This stage DOES demonstrate:
+- `tools/build_review_log.py`
+- `tools/verify_review_log.py`
+- `tools/run_stage247_review_transparency.sh`
 
-👉 a bounded review has occurred  
-👉 that result is preserved as signed evidence  
+### Tests
 
----
+- `tests/test_review_log.py`
 
-## How to run
+## Review transparency model
 
-### Full execution
+Stage247 uses the following model:
 
-./tools/run_stage245_real_review.sh
+Review Records
+↓
+Leaf Hashes
+↓
+Merkle-style Root
+↓
+Canonical Review Log Hash
+↓
+Ed25519 Signature
+↓
+Independent Verification
 
----
+## Repository structure
 
-### Sign review record
+```text
+review_records/
+  review_001.json
+  review_002.json
+  review_003.json
 
-python3 tools/sign_review_record.py \
-  --input review_records/real_review_record.json \
-  --signature-output review_records/real_review_record.sig
+tools/
+  build_review_log.py
+  verify_review_log.py
+  run_stage247_review_transparency.sh
 
----
+out/review_log/
+  review_log.json
+  review_log_hash.txt
+  review_log.sig
 
-### Verify signed review record
+tests/
+  test_review_log.py
 
-python3 tools/verify_signed_review_record.py \
-  --input review_records/real_review_record.json \
-  --signature review_records/real_review_record.sig
+docs/
+  review_transparency.md
+How to run
+1. Install dependencies
+python3 -m pip install --upgrade pip
+python3 -m pip install cryptography pytest
+2. Run Stage247
+chmod +x tools/run_stage247_review_transparency.sh
+./tools/run_stage247_review_transparency.sh
+3. Run tests
+pytest -q
+Manual verification
 
----
+You can also verify directly:
 
-## Output artifacts
+python3 tools/verify_review_log.py \
+  --review-log out/review_log/review_log.json \
+  --hash-file out/review_log/review_log_hash.txt \
+  --sig-file out/review_log/review_log.sig \
+  --public-key keys/owner_public.pem
+Security properties
+Integrity
 
-- review_records/real_review_record.json
-- review_records/real_review_record.sig
-- out/review_signed/sign_review_record.txt
-- out/review_signed/verify_signed_review_record.txt
+If any review entry changes, verification fails.
 
----
+Tamper Detection
 
-## Security meaning
+If the review log or its hash is modified, the mismatch is detected.
 
-Stage245 establishes:
+Signature Binding
 
-- reviewer identity (bounded)
-- review verdict
-- preserved evidence
-- signature-based integrity
-- reproducible verification
+The review log hash is signed with an Ed25519 private key.
 
-This is a key requirement for research-grade evaluation.
+Auditability
 
----
+A third party can verify the review history without trusting local claims.
 
-## Next Step
+Threat model note
 
-Stage246:
+Stage247 improves integrity and auditability of review history.
 
-👉 External Review Transparency
+It does not prove that a reviewer is correct.
+It proves that the recorded review history has not been silently changed.
 
-Focus:
-- review record indexing
-- history tracking
-- auditability across time
+Relationship to earlier stages
+Stage245: review evidence exists
+Stage246: reviewer process is structured
+Stage247: review history becomes tamper-evident and independently verifiable
+Intended external meaning
 
----
+For external reviewers or organizations such as OpenSSF or infrastructure/security teams,
+this stage changes the project from:
 
-## Conclusion
+"interesting review evidence"
 
-Stage245 moves QSP from:
+to:
 
-"review is possible"
+"review history with audit properties"
+Limitations
 
-to
+This is a lightweight Merkle-style construction for repository-level transparency.
 
-"review has happened and left signed, verifiable evidence"
+It is not yet:
 
-This is a major step toward real-world research validation.
+a public append-only service
+a federated transparency network
+a global transparency protocol
+
+Those can come in later stages.
+
+License
+
+This project is licensed under the MIT License.
