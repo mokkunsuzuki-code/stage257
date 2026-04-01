@@ -11,6 +11,10 @@ keys/*_private.pem
 keys/*.key
 keys/private/
 
+# reviewer private materials
+reviewer_private/
+reviewer_secrets/
+
 # local signatures
 signatures/*.sig.json
 
