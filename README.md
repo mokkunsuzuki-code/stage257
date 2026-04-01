@@ -1,128 +1,136 @@
-# Stage244: Real External Reviewer Activation
+# Stage245: First Real Review Record
 
 MIT License © 2025 Motohiro Suzuki
 
 ## Overview
 
-Stage244 activates a real external reviewer path for QSP.
+Stage245 introduces the first concrete review record in the QSP reviewer flow.
 
-This stage enables a third party to:
+This stage demonstrates that:
 
-- receive a bounded review packet
-- reproduce verification steps
-- leave a structured review record
+- a review has actually occurred
+- the review result is recorded
+- the record is signed
+- the signature can be verified
 
-This is not full external certification.  
-It is a **realistic activation of external participation**.
+This is a transition from "review is possible" to "review has happened".
 
 ---
 
 ## Why this stage matters
 
-Before Stage244:
+Before Stage245:
 
-- reviewer roles existed
-- onboarding existed
-- evidence and CI were verifiable
+- review workflow existed
+- external participation was possible
+- review records could be defined
 
-After Stage244:
+After Stage245:
 
-👉 a real external reviewer can actually participate
+👉 a real review record exists  
+👉 it is cryptographically signed  
+👉 it can be independently verified  
 
-This improves:
+This significantly increases:
 
-- Research credibility
-- Operational realism
-- External evaluation readiness
-
----
-
-## What Stage244 adds
-
-- External reviewer policy
-- Explicit review scope boundaries
-- Reviewer quickstart guide
-- Review verdict definitions
-- Review request packet generator
-- Review record validator
-- Example external review record
+- research credibility
+- auditability
+- reproducibility
 
 ---
 
-## Review Model
+## What Stage245 adds
 
-External reviewers can perform bounded verification and leave a verdict:
+- first concrete review record (`real_review_record.json`)
+- signature over the review record (`real_review_record.sig`)
+- public verification flow
+- example documentation for real review
 
-- observed
-- reproduced
-- reviewed
-- approved
+---
 
-Important:
+## Review meaning
 
-👉 Verdicts apply only to the declared scope  
-👉 No overclaiming is expected or required
+This stage does NOT claim:
+
+- full audit
+- full repository approval
+- production certification
+
+This stage DOES demonstrate:
+
+👉 a bounded review has occurred  
+👉 that result is preserved as signed evidence  
 
 ---
 
 ## How to run
 
-### Generate review request
-
-python3 tools/generate_review_request.py \
-  --reviewer-id external-demo \
-  --commit demo-commit \
-  --repo stage244
-
-### Verify review record
-
-python3 tools/verify_review_record.py \
-  --input review_records/example_external_review.json
-
 ### Full execution
 
-./tools/run_stage244_real_activation.sh
+./tools/run_stage245_real_review.sh
 
 ---
 
-## Output
+### Sign review record
 
-- out/review_packets/review_request.json
-- out/review_packets/review_request.md
-- out/review_status/review_record_check.txt
+python3 tools/sign_review_record.py \
+  --input review_records/real_review_record.json \
+  --signature-output review_records/real_review_record.sig
+
+---
+
+### Verify signed review record
+
+python3 tools/verify_signed_review_record.py \
+  --input review_records/real_review_record.json \
+  --signature review_records/real_review_record.sig
+
+---
+
+## Output artifacts
+
+- review_records/real_review_record.json
+- review_records/real_review_record.sig
+- out/review_signed/sign_review_record.txt
+- out/review_signed/verify_signed_review_record.txt
 
 ---
 
 ## Security meaning
 
-Stage244 does NOT claim:
+Stage245 establishes:
 
-- full security proof
-- full audit
-- production readiness
+- reviewer identity (bounded)
+- review verdict
+- preserved evidence
+- signature-based integrity
+- reproducible verification
 
-Stage244 DOES provide:
-
-👉 a reproducible and bounded external review path
+This is a key requirement for research-grade evaluation.
 
 ---
 
 ## Next Step
 
-Stage245:
+Stage246:
 
-👉 First Real External Review Record
+👉 External Review Transparency
+
+Focus:
+- review record indexing
+- history tracking
+- auditability across time
 
 ---
 
 ## Conclusion
 
-Stage244 transforms QSP from:
+Stage245 moves QSP from:
 
-"internally verifiable"
+"review is possible"
 
 to
 
-"externally participatable"
+"review has happened and left signed, verifiable evidence"
 
-This is a key step toward real-world evaluation.
+This is a major step toward real-world research validation.
