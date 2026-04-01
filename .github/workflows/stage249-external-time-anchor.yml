@@ -1,0 +1,52 @@
+name: stage249-external-time-anchor
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  external-time-anchor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate anchor request
+        run: |
+          chmod +x tools/generate_anchor_request.py
+          python3 tools/generate_anchor_request.py
+
+      - name: Record GitHub external anchor receipt
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+        run: |
+          chmod +x tools/record_github_anchor.py
+          python3 tools/record_github_anchor.py
+
+      - name: Verify external anchor
+        run: |
+          chmod +x tools/verify_external_anchor.py
+          python3 tools/verify_external_anchor.py \
+            --request out/anchors/anchor_request.json \
+            --receipt out/anchors/github_anchor_receipt.json
+
+      - name: Upload anchor artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage249-anchor-artifacts
+          path: out/anchors
