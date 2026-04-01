@@ -1,125 +1,130 @@
-QSP Stage247: Review Transparency (Tamper-Evident & Continuously Verified)
+QSP Stage248: Review Checkpoint Chain
 
 MIT License © 2025 Motohiro Suzuki
 
----
-
 ## Overview
 
-Stage247 introduces **review transparency** into QSP by making the entire review history:
+Stage248 extends Stage247 by adding a signed checkpoint chain for review history.
 
-- tamper-evident
-- cryptographically signed
-- independently verifiable
-- continuously verified via CI
+Stage247 established that the review history itself is tamper-evident.
 
-This stage moves from:
+Stage248 adds a stronger property:
 
-- Stage245: "a review exists"
+- the order of historical review states becomes verifiable
+- checkpoints are append-only
+- previous states cannot be silently rewritten
+
+This introduces a lightweight time-ordered audit model for review transparency.
+
+## What this stage adds
+
+### Review log
+
+The review history is aggregated and signed:
+
+- `out/review_log/review_log.json`
+- `out/review_log/review_log_hash.txt`
+- `out/review_log/review_log.sig`
+
+### Checkpoint chain
+
+Each review-log state is committed into a checkpoint chain:
+
+- `out/review_log_history/checkpoint_0001.json`
+- `out/review_log_history/checkpoint_index.json`
+
+Each checkpoint contains:
+
+- checkpoint id
+- timestamp
+- review log hash
+- merkle root
+- previous checkpoint hash
+- previous checkpoint file
+- checkpoint hash
+- signature
+
+## Security meaning
+
+Stage247:
+- review history is tamper-evident
+
+Stage248:
+- review history becomes ordered and append-only
+
+This means the system can detect:
+
+- silent modification
+- silent replacement
+- broken checkpoint continuity
+- history rewriting
+
+## Repository structure
+
+```text
+tools/
+  build_review_log.py
+  verify_review_log.py
+  create_review_checkpoint.py
+  verify_checkpoint_chain.py
+  run_stage247_review_transparency.sh
+  run_stage248_checkpoint_chain.sh
+
+out/review_log/
+  review_log.json
+  review_log_hash.txt
+  review_log.sig
+
+out/review_log_history/
+  checkpoint_0001.json
+  checkpoint_index.json
+
+tests/
+  test_review_log.py
+  test_stage248_checkpoint_chain.py
+How to run
+Run Stage248
+bash tools/run_stage248_checkpoint_chain.sh
+Run tests
+pytest -q
+Continuous verification
+
+GitHub Actions can continuously verify:
+
+review log generation
+review log signature verification
+checkpoint generation
+checkpoint chain verification
+repository tests
+
+If checkpoint integrity breaks, verification fails.
+
+Why this matters
+
+This stage changes the project from:
+
+"review history can be verified"
 
 to:
 
-- Stage247: "the review history itself is verifiable and cannot be silently modified"
+"review history can be verified as an append-only sequence"
 
----
+That is a stronger audit property and is closer to a transparency-log model.
 
-## What This Stage Adds
+Limits
 
-### Review Log
+Stage248 is a lightweight repository-level checkpoint chain.
 
-All review records are aggregated into a single log:
+It is not yet:
 
+a public transparency service
+a federated log
+an external timestamp authority
 
-out/review_log/
-review_log.json
-review_log_hash.txt
-review_log.sig
+Those can come in later stages.
 
-
-### Tamper-Evidence
-
-- SHA-256 hash of the full review log
-- Ed25519 signature over the hash
-- Any modification breaks verification
-
-### Merkle-style Aggregation
-
-- Each review is hashed
-- A combined root is computed
-- Enables integrity validation across the entire history
-
-### Independent Verification
-
-Anyone can verify:
-
-```bash
-python3 tools/verify_review_log.py \
-  --review-log out/review_log/review_log.json \
-  --hash-file out/review_log/review_log_hash.txt \
-  --sig-file out/review_log/review_log.sig \
-  --public-key keys/owner_public.pem
-Continuous Verification (GitHub Actions)
-
-On every push:
-
-review log is rebuilt
-hash is recomputed
-signature is generated and verified
-tests are executed
-
-If anything breaks, CI fails.
-
-This ensures:
-
-The review transparency model is continuously enforced.
-
-Quick Start
-git clone https://github.com/mokkunsuzuki-code/stage247.git
-cd stage247
-
-./tools/run_stage247_review_transparency.sh
-pytest -q
-Security Meaning
-
-This stage establishes:
-
-Integrity: review history cannot be altered undetected
-Authenticity: signed evidence proves origin
-Transparency: full history is visible and verifiable
-Reproducibility: anyone can re-run verification
-Continuity: CI ensures ongoing correctness
-Design Principle
-
-QSP follows:
-
-Assumption → Claim → Test → Evidence → Verification
-
-Stage247 extends this with:
-
-Review → Review Log → Hash → Signature → CI Verification
-Positioning
-
-This is not:
-
-a new cryptographic primitive
-a new QKD proof
-
-This is:
-
-a reproducible and auditable verification framework for security claims
-
-Future Work
-Stage248: append-only review history (checkpointing)
-external reviewer signatures
-transparency log federation
 Conclusion
 
-Stage247 transforms review evidence into:
+Stage248 introduces an append-only checkpoint chain for review history.
 
-a tamper-evident, continuously verified audit artifact
-
-This enables stronger trust for:
-
-researchers
-security engineers
-organizations evaluating QSP
+This strengthens QSP from a tamper-evident review log into a time-ordered audit trail.
