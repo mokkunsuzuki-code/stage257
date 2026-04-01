@@ -21,6 +21,25 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Prepare transparency input from checkpoint history
+        run: |
+          set -euo pipefail
+
+          test -f out/review_log_history/checkpoint_index.json
+          mkdir -p out/transparency/history
+
+          cp out/review_log_history/checkpoint_index.json out/transparency/checkpoint_index.json
+          cp out/review_log_history/checkpoint_*.json out/transparency/history/
+
+          LATEST_CHECKPOINT=$(find out/review_log_history -name 'checkpoint_*.json' | sort | tail -n 1)
+          test -n "$LATEST_CHECKPOINT"
+          cp "$LATEST_CHECKPOINT" out/transparency/checkpoint.json
+
+          sha256sum out/transparency/checkpoint.json | awk '{print $1}' > out/transparency/root.txt
+
+          echo "[INFO] prepared transparency input"
+          find out/transparency -maxdepth 3 -type f | sort
+
       - name: Generate anchor request
         run: |
           chmod +x tools/generate_anchor_request.py
