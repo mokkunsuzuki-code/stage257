@@ -20,3 +20,7 @@ signatures/*.sig.json
 
 # source bundles
 *.tar.gz
+
+# private keys
+keys/*_private.pem
+keys/*.key
