@@ -1,0 +1,28 @@
+name: stage257-third-party-chain
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  verify-chain:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run chain demo
+        run: |
+          chmod +x tools/run_stage257.sh
+          ./tools/run_stage257.sh
+
+      - name: Verify chain
+        run: |
+          python3 tools/verify_third_party_chain.py
