@@ -1,28 +1,38 @@
 # Stage253: QSP Session Anchoring
 
-Stage253 binds anchoring evidence directly to QSP session execution output.
+Stage253 introduces **Session Anchoring** for QSP.
 
-This stage generates `session_manifest.json` from a QSP session result and fixes:
+This stage proves that a verifiable evidence chain can be derived directly from QSP-style session execution output.
 
-- transcript hash
-- policy
-- fail-closed result
+---
 
-The generated session manifest can then be verified through:
+## Overview
 
-- local witness
-- checkpoint witness
-- GitHub anchor
-- OpenTimestamps (OTS)
-- cosign bundle
+In this stage, we:
 
-## Why this stage matters
+1. Execute a QSP session (deterministic demo)
+2. Generate `session_manifest.json`
+3. Bind critical security properties:
+   - transcript hash
+   - policy
+   - fail-closed result
+4. Anchor the manifest with:
+   - local witness
+   - checkpoint witness (append-only)
+   - GitHub Actions (anchor receipt)
+   - OpenTimestamps (OTS)
+   - cosign bundle (Sigstore)
 
-The main value of Stage253 is not adding more external signatures first.
+---
 
-The main value is proving that the evidence structure is born directly from QSP itself.
+## Why this matters
 
-That makes later external review stronger, because the reviewer can see:
+The key idea is:
+
+> Evidence is not added later.  
+> Evidence is generated from the session itself.
+
+This creates a direct chain:
 
 QSP execution  
 → session result  
@@ -30,66 +40,103 @@ QSP execution
 → anchored evidence  
 → independent verification
 
+---
+
+## What is verified
+
+This stage ensures:
+
+- The manifest is derived from session execution output
+- Transcript integrity is fixed via `transcript_hash`
+- Security policy is fixed
+- Fail-closed behavior is explicitly recorded
+- All witnesses and anchors refer to the same manifest
+
+---
+
+## Architecture
+
+
+QSP session execution
+↓
+qsp_session_result.json
+↓
+session_manifest.json
+↓
+├── local_witness.json
+├── checkpoint_witness.json
+├── GitHub anchor (receipt)
+├── OTS (timestamp)
+└── cosign bundle
+
+
+---
+
 ## Files
 
 - `tools/run_qsp_session_demo.py`  
-  Minimal deterministic QSP session execution output
+  Minimal deterministic QSP session output
 
 - `tools/build_session_manifest.py`  
-  Builds `session_manifest.json` from QSP session result
+  Builds `session_manifest.json`
 
 - `tools/sign_session_manifest.py`  
-  Creates local witness and checkpoint witness
+  Creates local & checkpoint witnesses
 
 - `tools/verify_session_anchor.py`  
-  Verifies manifest binding and anchor artifacts
+  Verifies the entire anchor chain
 
 - `.github/workflows/stage253-session-anchor.yml`  
-  Produces GitHub anchor receipt, OTS, and cosign bundle
+  Produces external anchors (GitHub / OTS / cosign)
+
+---
 
 ## Quickstart
 
-### 1. Local build
+### 1. Local execution
 
 ```bash
 ./tools/run_stage253_qsp_session_anchor.sh
-2. Push to GitHub
+2. Push and run CI
 git add .
-git commit -m "Stage253: add QSP session anchoring"
+git commit -m "Stage253: QSP session anchoring"
 git push
-3. Download workflow artifacts
+3. Download artifacts
 gh run list --workflow "stage253-session-anchor" --limit 5
-gh run download <RUN_ID> -n stage253-session-anchor-artifacts -D downloaded_stage253_session_anchor
+
+gh run download <RUN_ID> \
+  -n stage253-session-anchor-artifacts \
+  -D downloaded_stage253_session_anchor
 4. Verify
 python3 tools/verify_session_anchor.py \
-  --manifest downloaded_stage253_session_anchor/session_manifest.json \
-  --session-result downloaded_stage253_session_anchor/qsp_session_result.json \
-  --local-witness downloaded_stage253_session_anchor/local_witness.json \
-  --local-public downloaded_stage253_session_anchor/local_witness_public.pem \
-  --checkpoint-witness downloaded_stage253_session_anchor/checkpoint_witness.json \
-  --checkpoint-public downloaded_stage253_session_anchor/checkpoint_witness_public.pem \
-  --github-receipt downloaded_stage253_session_anchor/github_session_anchor_receipt.json \
-  --ots downloaded_stage253_session_anchor/session_manifest.json.ots \
-  --cosign-bundle downloaded_stage253_session_anchor/session_manifest.json.cosign.bundle
-Verification meaning
+  --manifest downloaded_stage253_session_anchor/out/session/session_manifest.json \
+  --session-result downloaded_stage253_session_anchor/out/session/qsp_session_result.json \
+  --local-witness downloaded_stage253_session_anchor/out/witnesses/local_witness.json \
+  --local-public downloaded_stage253_session_anchor/keys/local_witness_public.pem \
+  --checkpoint-witness downloaded_stage253_session_anchor/out/checkpoints/checkpoint_witness.json \
+  --checkpoint-public downloaded_stage253_session_anchor/keys/checkpoint_witness_public.pem \
+  --github-receipt downloaded_stage253_session_anchor/out/anchors/github_session_anchor_receipt.json \
+  --ots downloaded_stage253_session_anchor/out/session/session_manifest.json.ots \
+  --cosign-bundle downloaded_stage253_session_anchor/out/anchors/session_manifest.json.cosign.bundle
+Interpretation
 
 This stage demonstrates:
 
-the manifest is derived directly from QSP session execution output
-transcript hash is fixed
-policy is fixed
-fail-closed result is fixed
-witness and anchor artifacts point to the same manifest
-Security note
+Evidence is derived from session execution
+Security-relevant properties are fixed and verifiable
+Anchors (GitHub / OTS / cosign) all bind to the same data
+Verification can be reproduced independently
+Limitations
+This stage uses a deterministic demo session (not full QSP integration yet)
+It does not introduce new cryptographic proofs
+It focuses on evidence structure and verifiability
+Next step
 
-This stage does not claim a new cryptographic proof.
+Stage254:
 
-It claims a stronger evidence chain:
-
-QSP session execution output
-→ session manifest
-→ witness / checkpoint / external anchor artifacts
-→ independent verification
+👉 Direct integration with real QSP implementation
+👉 Session output is no longer simulated
+👉 Evidence is generated from real execution
 
 License
 
