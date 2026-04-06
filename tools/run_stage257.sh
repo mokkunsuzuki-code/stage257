@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+
+rm -rf out/third_party_chain
+mkdir -p out/third_party_chain/records
 
 python3 tools/create_third_party_chain_record.py \
   --executor A \
