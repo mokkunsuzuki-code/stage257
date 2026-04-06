@@ -1,118 +1,86 @@
-Stage254: Real QSP Integration (Session Anchoring)
+Stage255: External Independent Execution (QSP)
 
-This stage integrates the QSP execution itself into the evidence chain.
+## Overview
 
-Unlike previous stages, the session manifest is not generated from a demo,
-but directly derived from a real QSP execution.
+Stage255 introduces **external independent execution** for QSP.
 
----
+A third party can:
 
-## What this stage demonstrates
+- extract a packaged bundle
+- run QSP in their own environment
+- generate an anchor request from their own execution result
+- verify the anchor locally
 
-- Real QSP execution (Stage226)
-- Extraction of:
-  - transcript hash
-  - policy
-  - fail-closed result
-- Generation of `session_manifest.json` from actual execution
-- Multi-layer anchoring:
-  - Local witness (Ed25519)
-  - Checkpoint witness (append-only)
-  - GitHub Actions anchor
-  - OpenTimestamps (OTS)
-  - cosign bundle (Sigstore)
+This removes dependence on the author's environment and strengthens reproducibility.
 
 ---
 
-## Architecture
+## Key Concept
 
+Previous stages:
 
-Real QSP execution (stage226)
-↓
-qsp_session_result.json
-↓
-session_manifest.json
-↓
-witness / checkpoint / external anchors
-↓
-independent verification
+- Author executes QSP
+- Author generates anchor
 
+Stage255:
 
----
-
-## Key property
-
-The evidence is now **directly derived from the protocol execution**.
-
-This removes the gap between:
-
-- protocol behavior
-- evidence artifacts
+- Third party executes QSP
+- Third party generates anchor
+- Third party verifies anchor
 
 ---
 
-## How to reproduce (local)
+## Quick Start
 
 ```bash
-cd stage254
+git clone https://github.com/mokkunsuzuki-code/stage255.git
+cd stage255
 
-export QSP_REAL_REPO=../stage226
-export QSP_REAL_RUN_CMD="python3 poc/run_poc.py"
+bash tools/run_stage255_external_independent.sh
+What Happens
+Bundle is created
+Bundle is extracted
+New virtual environment is created
+Dependencies are installed
+QSP is executed
+Anchor is generated
+Anchor is verified
+Outputs
+out/extracted_stage255_runner/stage255_external_runner/out/external_independent/
+qsp_result_copy.json
+anchor_request.json
+anchor_request.json.sha256
+Example Anchor
+{
+  "stage": "stage255",
+  "type": "external_independent_anchor_request",
+  "command_used": ["python", "tools/run_stage255_qsp.py"],
+  "qsp_result_sha256": "...",
+  "bundle_manifest_sha256": "..."
+}
+Security Meaning
 
-./tools/run_stage254_real_qsp_anchor.sh
-How to verify (GitHub Actions)
-gh run list --workflow "stage254-real-qsp-anchor"
+This stage upgrades the trust model from:
 
-gh run download <RUN_ID> \
-  -n stage254-real-qsp-anchor-artifacts \
-  -D downloaded_stage254_session_anchor
+"Author-generated execution"
 
-python3 tools/verify_session_anchor.py \
-  --manifest downloaded_stage254_session_anchor/out/session/session_manifest.json \
-  --session-result downloaded_stage254_session_anchor/out/session/qsp_session_result.json \
-  --local-witness downloaded_stage254_session_anchor/out/witnesses/local_witness.json \
-  --local-public downloaded_stage254_session_anchor/keys/local_witness_public.pem \
-  --checkpoint-witness downloaded_stage254_session_anchor/out/checkpoints/checkpoint_witness.json \
-  --checkpoint-public downloaded_stage254_session_anchor/keys/checkpoint_witness_public.pem \
-  --github-receipt downloaded_stage254_session_anchor/out/anchors/github_session_anchor_receipt.json \
-  --ots downloaded_stage254_session_anchor/out/session/session_manifest.json.ots \
-  --cosign-bundle downloaded_stage254_session_anchor/out/anchors/session_manifest.json.cosign.bundle
-Verification guarantees
-manifest integrity (SHA256)
-transcript binding
-fail-closed result consistency
-witness signatures (local / checkpoint)
-GitHub run binding
-external timestamp (OTS)
-Sigstore transparency (cosign)
-Important note
+to:
 
-This stage does NOT introduce a new cryptographic proof.
+"Third-party independently reproducible execution"
 
-It strengthens the evidence chain:
+It ensures that:
 
-QSP execution
-→ manifest
-→ anchors
-→ independent verification
-Why this matters
-
-Previous stages proved:
-
-reproducibility
-transparency
-verifiability
-
-Stage254 proves:
-
-👉 the evidence originates from real protocol execution
-
+execution is reproducible
+results are hash-bound
+anchor is locally verifiable
+bundle integrity is enforced
 Limitations
-Assumes QSP implementation outputs JSON
-Depends on Stage226 structure
-OTS verification may be pending until blockchain confirmation
+This does not prove universal correctness
+This uses a minimal QSP execution stub
+Real-world deployments require further integration
+Next Steps
+Stage256: External execution logging
+Stage257: Multi-party execution chain
 License
 
 MIT License
-
-Copyright (c) 2025 Motohiro Suzuki
