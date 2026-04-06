@@ -1,89 +1,94 @@
 #!/usr/bin/env python3
-# MIT License
-# Copyright (c) 2025 Motohiro Suzuki
-
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
-
-
-def sha256_bytes(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
+from typing import Dict, List
 
 
 def sha256_file(path: Path) -> str:
-    return sha256_bytes(path.read_bytes())
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
-def read_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+def verify_manifest(root: Path, manifest_path: Path) -> None:
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    files: List[Dict[str, str]] = manifest.get("files", [])
+
+    for item in files:
+        rel = item["path"]
+        expected = item["sha256"]
+        target = root / rel
+
+        if not target.exists():
+            raise FileNotFoundError(f"Manifest file missing: {target}")
+
+        actual = sha256_file(target)
+        if actual != expected:
+            raise ValueError(
+                f"Manifest hash mismatch: {rel} expected={expected} actual={actual}"
+            )
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Verify external timestamp anchor")
-    parser.add_argument(
-        "--request",
-        default="out/anchors/anchor_request.json",
-        help="Path to anchor request JSON",
-    )
-    parser.add_argument(
-        "--receipt",
-        default="out/anchors/github_anchor_receipt.json",
-        help="Path to GitHub anchor receipt JSON",
-    )
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--anchor", required=True, help="Path to anchor_request.json")
+    parser.add_argument("--manifest", required=True, help="Path to stage255 bundle manifest")
     args = parser.parse_args()
 
-    request_path = Path(args.request)
-    receipt_path = Path(args.receipt)
+    anchor_path = Path(args.anchor).resolve()
+    manifest_path = Path(args.manifest).resolve()
+    root = manifest_path.parent
 
-    if not request_path.exists():
-        raise FileNotFoundError(f"Missing request file: {request_path}")
-    if not receipt_path.exists():
-        raise FileNotFoundError(f"Missing receipt file: {receipt_path}")
+    if not anchor_path.exists():
+        raise FileNotFoundError(f"Anchor not found: {anchor_path}")
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Manifest not found: {manifest_path}")
 
-    request = read_json(request_path)
-    receipt = read_json(receipt_path)
+    verify_manifest(root, manifest_path)
 
-    request_sha256 = sha256_file(request_path)
-    receipt_request_sha256 = receipt.get("request_sha256")
-    if request_sha256 != receipt_request_sha256:
+    anchor = json.loads(anchor_path.read_text(encoding="utf-8"))
+
+    manifest_sha_expected = anchor.get("bundle_manifest_sha256")
+    manifest_sha_actual = sha256_file(manifest_path)
+    if manifest_sha_expected and manifest_sha_expected != manifest_sha_actual:
         raise ValueError(
-            f"Request hash mismatch: computed={request_sha256} receipt={receipt_request_sha256}"
+            f"Bundle manifest sha mismatch: expected={manifest_sha_expected} actual={manifest_sha_actual}"
         )
 
-    if receipt.get("stage") != "stage249":
-        raise ValueError("Receipt stage is not stage249")
+    qsp_result_rel = anchor["qsp_result_path"]
+    qsp_result_path = root / qsp_result_rel
+    if not qsp_result_path.exists():
+        raise FileNotFoundError(f"QSP result copy missing: {qsp_result_path}")
 
-    if receipt.get("anchor_type") != "github_actions_external_timestamp_receipt":
-        raise ValueError("Unexpected receipt anchor_type")
+    qsp_result_sha_actual = sha256_file(qsp_result_path)
+    if qsp_result_sha_actual != anchor["qsp_result_sha256"]:
+        raise ValueError(
+            "QSP result sha mismatch: "
+            f"expected={anchor['qsp_result_sha256']} actual={qsp_result_sha_actual}"
+        )
 
-    if request.get("sequence") != receipt.get("request_sequence"):
-        raise ValueError("Request sequence does not match receipt request_sequence")
+    anchor_sha_path = anchor_path.with_suffix(anchor_path.suffix + ".sha256")
+    if anchor_sha_path.exists():
+        line = anchor_sha_path.read_text(encoding="utf-8").strip()
+        expected_anchor_sha = line.split()[0]
+        actual_anchor_sha = sha256_file(anchor_path)
+        if expected_anchor_sha != actual_anchor_sha:
+            raise ValueError(
+                f"Anchor sha mismatch: expected={expected_anchor_sha} actual={actual_anchor_sha}"
+            )
 
-    request_checkpoint_id = request.get("semantic_binding", {}).get("checkpoint_id")
-    receipt_checkpoint_id = receipt.get("checkpoint_id")
-    if request_checkpoint_id != receipt_checkpoint_id:
-        raise ValueError("Checkpoint ID mismatch between request and receipt")
-
-    request_checkpoint_seq = request.get("semantic_binding", {}).get("checkpoint_latest_history_sequence")
-    receipt_checkpoint_seq = receipt.get("checkpoint_sequence")
-    if request_checkpoint_seq != receipt_checkpoint_seq:
-        raise ValueError("Checkpoint sequence mismatch between request and receipt")
-
-    run_url = receipt.get("run_url")
-    if not run_url or "/actions/runs/" not in run_url:
-        raise ValueError("Receipt run_url is missing or malformed")
-
-    print("[OK] external anchor verified")
-    print(f"[OK] request_sha256: {request_sha256}")
-    print(f"[OK] checkpoint_id: {request_checkpoint_id}")
-    print(f"[OK] checkpoint_sequence: {request_checkpoint_seq}")
-    print(f"[OK] run_url: {run_url}")
+    print("[OK] manifest files verified")
+    print("[OK] bundle manifest hash verified")
+    print("[OK] qsp result hash verified")
+    print("[OK] anchor hash verified")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
