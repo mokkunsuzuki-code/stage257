@@ -1,154 +1,96 @@
-Stage252: External Anchor Integration (OpenTimestamps + Cosign Bundle)
+# Stage253: QSP Session Anchoring
 
-## Overview
+Stage253 binds anchoring evidence directly to QSP session execution output.
 
-Stage252 extends the multi-anchor verification model by adding **external anchoring mechanisms** beyond GitHub.
+This stage generates `session_manifest.json` from a QSP session result and fixes:
 
-This stage introduces:
+- transcript hash
+- policy
+- fail-closed result
 
-- OpenTimestamps-based timestamp anchoring
-- Cosign bundle-based external signature verification
-- Continued compatibility with Stage251 multi-anchor verification
+The generated session manifest can then be verified through:
 
-The result is a stronger trust model that does not depend on a single platform or a single verification path.
+- local witness
+- checkpoint witness
+- GitHub anchor
+- OpenTimestamps (OTS)
+- cosign bundle
 
----
+## Why this stage matters
 
-## Why This Matters
+The main value of Stage253 is not adding more external signatures first.
 
-Earlier stages improved verification through:
+The main value is proving that the evidence structure is born directly from QSP itself.
 
-- Signed evidence
-- Transparency checkpoints
-- Multi-anchor threshold verification
+That makes later external review stronger, because the reviewer can see:
 
-However, trust was still partially concentrated around local or GitHub-linked evidence.
+QSP execution  
+→ session result  
+→ session manifest  
+→ anchored evidence  
+→ independent verification
 
-Stage252 improves this by adding:
+## Files
 
-- **OpenTimestamps** for external timestamp anchoring
-- **Cosign bundle verification** for external signing and transparency-linked verification
+- `tools/run_qsp_session_demo.py`  
+  Minimal deterministic QSP session execution output
 
-This moves the project closer to a genuinely distributed trust model.
+- `tools/build_session_manifest.py`  
+  Builds `session_manifest.json` from QSP session result
 
----
+- `tools/sign_session_manifest.py`  
+  Creates local witness and checkpoint witness
 
-## Architecture
+- `tools/verify_session_anchor.py`  
+  Verifies manifest binding and anchor artifacts
 
-### Existing Anchors from Stage251
+- `.github/workflows/stage253-session-anchor.yml`  
+  Produces GitHub anchor receipt, OTS, and cosign bundle
 
-| Anchor Type | Description |
-|------------|------------|
-| GitHub Release Anchor | External release-linked anchor |
-| Local Witness | Ed25519-based local signature |
-| Checkpoint Witness | Append-only checkpoint history |
+## Quickstart
 
-### New External Anchors in Stage252
-
-| Anchor Type | Description |
-|------------|------------|
-| OpenTimestamps | External timestamp proof |
-| Cosign Bundle | External signature bundle with verifiable blob signature |
-
----
-
-## What Was Added
-
-### 1. OpenTimestamps Anchor
-
-A timestamp proof is generated for the Stage250 release manifest:
+### 1. Local build
 
 ```bash
-./tools/generate_ots_anchor.sh downloaded_stage250_release_anchor/release_manifest.json
+./tools/run_stage253_qsp_session_anchor.sh
+2. Push to GitHub
+git add .
+git commit -m "Stage253: add QSP session anchoring"
+git push
+3. Download workflow artifacts
+gh run list --workflow "stage253-session-anchor" --limit 5
+gh run download <RUN_ID> -n stage253-session-anchor-artifacts -D downloaded_stage253_session_anchor
+4. Verify
+python3 tools/verify_session_anchor.py \
+  --manifest downloaded_stage253_session_anchor/session_manifest.json \
+  --session-result downloaded_stage253_session_anchor/qsp_session_result.json \
+  --local-witness downloaded_stage253_session_anchor/local_witness.json \
+  --local-public downloaded_stage253_session_anchor/local_witness_public.pem \
+  --checkpoint-witness downloaded_stage253_session_anchor/checkpoint_witness.json \
+  --checkpoint-public downloaded_stage253_session_anchor/checkpoint_witness_public.pem \
+  --github-receipt downloaded_stage253_session_anchor/github_session_anchor_receipt.json \
+  --ots downloaded_stage253_session_anchor/session_manifest.json.ots \
+  --cosign-bundle downloaded_stage253_session_anchor/session_manifest.json.cosign.bundle
+Verification meaning
 
-Verification:
+This stage demonstrates:
 
-./tools/verify_ots_anchor.sh downloaded_stage250_release_anchor/release_manifest.json
+the manifest is derived directly from QSP session execution output
+transcript hash is fixed
+policy is fixed
+fail-closed result is fixed
+witness and anchor artifacts point to the same manifest
+Security note
 
-Note:
+This stage does not claim a new cryptographic proof.
 
-Initial verification may show Pending confirmation in Bitcoin blockchain
-This is normal until the timestamp becomes fully confirmed
-2. Cosign Bundle-Based External Verification
+It claims a stronger evidence chain:
 
-A blob signature bundle is created for the same release manifest:
+QSP session execution output
+→ session manifest
+→ witness / checkpoint / external anchor artifacts
+→ independent verification
 
-cosign sign-blob \
-  --yes \
-  --key keys/stage252_cosign.key \
-  --bundle out/external_anchor/receipts/release_manifest.sigstore.json \
-  downloaded_stage250_release_anchor/release_manifest.json
-
-Verification:
-
-cosign verify-blob \
-  --key keys/stage252_cosign.pub \
-  --bundle out/external_anchor/receipts/release_manifest.sigstore.json \
-  downloaded_stage250_release_anchor/release_manifest.json
-
-Expected result:
-
-Verified OK
-Output
-External anchor artifacts
-out/external_anchor/receipts/release_manifest.sigstore.json
-downloaded_stage250_release_anchor/release_manifest.json.ots
-Additional related files
-keys/stage252_cosign.pub
-tools/generate_ots_anchor.sh
-tools/verify_ots_anchor.sh
-tools/register_rekor.sh
-tools/verify_rekor.sh
-Security Properties
-1. Reduced Platform Dependence
-
-Verification no longer depends only on GitHub.
-
-2. External Timestamp Evidence
-
-OpenTimestamps provides external time-based anchoring.
-
-3. External Signature Verification
-
-Cosign bundle verification provides a verifiable external signature path.
-
-4. Layered Trust Model
-
-Stage252 combines:
-
-local verification
-checkpoint verification
-GitHub anchoring
-external timestamping
-external bundle verification
-5. Tamper Evidence
-
-If the artifact changes, verification fails.
-
-Limitations
-OpenTimestamps may initially remain in pending state before full blockchain confirmation
-The current external bundle verification is strong, but broader independent third-party witness diversity can still be improved further
-This stage improves trust distribution, but it is not yet a full production trust federation
-Conclusion
-
-Stage252 advances the project from:
-
-multi-anchor internal/external hybrid verification
-
-to
-
-externally anchored, layered verification
-
-This is an important step toward a more distributed and reviewer-friendly trust model.
-
-Next Step
-
-Possible next evolutions:
-
-broader third-party witness integration
-external reviewer signatures
-stronger policy binding between anchors and claims
-reviewer-facing verification package refinement
 License
 
 MIT License
