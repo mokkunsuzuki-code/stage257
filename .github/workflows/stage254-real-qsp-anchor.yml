@@ -15,30 +15,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout (stage254)
         uses: actions/checkout@v5
+
+      # ★ ここが追加（重要）
+      - name: Checkout stage226
+        run: |
+          git clone https://github.com/mokkunsuzuki-code/stage226.git ../stage226
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install Python dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install cryptography
+          python -m pip install cryptography opentimestamps-client
 
-      - name: Build Stage254 session anchor artifacts
+      - name: Run Stage254 real QSP anchor
         env:
           QSP_REAL_REPO: ../stage226
           QSP_REAL_RUN_CMD: python3 poc/run_poc.py
         run: |
           chmod +x tools/run_stage254_real_qsp_anchor.sh
           ./tools/run_stage254_real_qsp_anchor.sh
-
-      - name: Install OpenTimestamps client
-        run: |
-          python -m pip install opentimestamps-client
 
       - name: Create OTS stamp
         run: |
@@ -69,28 +70,21 @@ jobs:
               "commit_sha": "${{ github.sha }}",
               "run_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
               "manifest_sha256": manifest["manifest_sha256"],
-              "artifact_name": "stage254-real-qsp-anchor-artifacts",
           }
 
-          out = Path("out/anchors/github_session_anchor_receipt.json")
-          out.write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-          print(f"[OK] wrote: {out}")
+          Path("out/anchors/github_session_anchor_receipt.json").write_text(
+              json.dumps(receipt, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8"
+          )
           PY
 
-      - name: Upload session anchor artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: stage254-real-qsp-anchor-artifacts
           path: |
-            out/session/qsp_session_result.json
-            out/session/session_manifest.json
-            out/session/session_manifest.json.sha256
-            out/witnesses/local_witness.json
-            out/checkpoints/checkpoint_witness.json
-            out/checkpoints/checkpoint_index.json
-            out/checkpoints/history
-            out/anchors/github_session_anchor_receipt.json
-            out/session/session_manifest.json.ots
-            out/anchors/session_manifest.json.cosign.bundle
-            keys/local_witness_public.pem
-            keys/checkpoint_witness_public.pem
+            out/session
+            out/witnesses
+            out/checkpoints
+            out/anchors
+            keys
