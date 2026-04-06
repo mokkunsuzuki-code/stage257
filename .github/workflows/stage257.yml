@@ -5,18 +5,25 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   verify-chain:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Clean previous chain state
+        run: |
+          rm -rf out/third_party_chain
 
       - name: Run chain demo
         run: |
@@ -26,3 +33,13 @@ jobs:
       - name: Verify chain
         run: |
           python3 tools/verify_third_party_chain.py
+
+      - name: Show chain index
+        run: |
+          cat out/third_party_chain/chain_index.json
+
+      - name: Upload chain artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage257-third-party-chain
+          path: out/third_party_chain
