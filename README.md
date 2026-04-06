@@ -1,66 +1,104 @@
-# Stage256: External Execution Record (QSP)
+# Stage257: Third-Party Execution History Chain
 
 ## Overview
 
-Stage256 records independently executed QSP runs.
+Stage257 introduces a **hash-chained history of independent third-party executions**.
 
-A third party can:
+Instead of recording a single execution result, this stage builds a **verifiable chain of executions**:
 
-- run QSP in their own environment
-- generate an anchor from their execution
-- record that execution as a verifiable receipt
-- verify the entire execution history later
+A executes → B executes → C executes
+
+Each record is linked to the previous one using SHA-256.
+
+This enables:
+
+- Multi-party execution tracking
+- Deterministic verification of the entire history
+- Tamper-evident execution logs
 
 ---
 
 ## Key Concept
 
-Stage255:
+Each execution record contains:
 
-- third party execution
+- executor (who ran it)
+- bundle reference
+- result (success / failure)
+- timestamp
+- SHA-256 of payload
+- SHA-256 link to previous record
 
-Stage256:
+If any past record is modified, the chain verification fails.
 
-- third party execution + recorded + verifiable
+---
+
+## What This Stage Proves
+
+- Multiple third-party executions can be appended
+- Each record is cryptographically linked
+- The full execution history is verifiable
+- The system detects tampering
+
+---
+
+## Limitations
+
+This stage provides **tamper detection**, not absolute immutability.
+
+For stronger guarantees, combine with:
+
+- Git history
+- Signed commits / tags
+- External timestamp anchoring
+- Release anchoring
+- Independent mirrors
 
 ---
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/mokkunsuzuki-code/stage256.git
-cd stage256
+chmod +x tools/run_stage257.sh
+./tools/run_stage257.sh
+Verification
+python3 tools/verify_third_party_chain.py
+GitHub Actions
 
-export QSP_EXTERNAL_COMMAND="python tools/run_stage255_qsp.py"
-bash tools/run_stage256_external_record.sh
-Outputs
+This repository includes CI that:
 
-out/external_execution_record/
+Rebuilds the chain from scratch
+Verifies integrity
+Publishes execution artifacts
 
-review_log.json
-review_log.json.sha256
-receipts/*.json
-Example Record
-{
-  "reviewer_id": "reviewer_local",
-  "executed_at_utc": "...",
-  "bundle_manifest_sha256": "...",
-  "anchor_sha256": "...",
-  "qsp_result_sha256": "...",
-  "receipt_sha256": "..."
-}
-Security Meaning
+This ensures reproducibility beyond local environments.
 
-This stage upgrades:
+Directory Structure
+tools/
+  create_third_party_chain_record.py
+  verify_third_party_chain.py
+  run_stage257.sh
 
-"external execution"
+out/
+  third_party_chain/
+    records/
+    chain_index.json
+Position in QSP Evolution
 
-to:
+Stage256:
+→ Independent execution record
 
-"externally recorded and verifiable execution history"
+Stage257:
+→ Chained multi-party execution history
 
-Next Steps
-Stage257: Multi-party execution chain
+Next (Stage258):
+→ External anchoring (global immutability)
+
 License
 
 MIT License
+
+Copyright (c) 2025 Motohiro Suzuki
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files...
