@@ -1,70 +1,72 @@
-# Stage254: Real QSP Integration
+Stage254: Real QSP Integration (Session Anchoring)
 
-Stage254 replaces the Stage253 deterministic demo with real QSP execution integration.
+This stage integrates the QSP execution itself into the evidence chain.
 
-This stage executes the real QSP implementation, normalizes the resulting session log, generates `session_manifest.json`, and anchors it with:
+Unlike previous stages, the session manifest is not generated from a demo,
+but directly derived from a real QSP execution.
 
-- local witness
-- checkpoint witness
-- GitHub anchor
-- OpenTimestamps (OTS)
-- cosign bundle
+---
 
-## Why this stage matters
+## What this stage demonstrates
 
-Stage253 proved that the anchoring structure works.
+- Real QSP execution (Stage226)
+- Extraction of:
+  - transcript hash
+  - policy
+  - fail-closed result
+- Generation of `session_manifest.json` from actual execution
+- Multi-layer anchoring:
+  - Local witness (Ed25519)
+  - Checkpoint witness (append-only)
+  - GitHub Actions anchor
+  - OpenTimestamps (OTS)
+  - cosign bundle (Sigstore)
 
-Stage254 proves that the evidence chain is generated from real QSP execution output rather than a demo-only session.
+---
 
-The core chain is:
+## Architecture
 
-Real QSP execution  
-→ session result  
-→ session manifest  
-→ anchored evidence  
-→ independent verification
 
-## What Stage254 does
+Real QSP execution (stage226)
+↓
+qsp_session_result.json
+↓
+session_manifest.json
+↓
+witness / checkpoint / external anchors
+↓
+independent verification
 
-1. Executes the real QSP implementation (default: `../stage226`)
-2. Collects a real JSON session result
-3. Normalizes the result into `qsp_session_result.json`
-4. Extracts and binds:
-   - transcript
-   - transcript hash
-   - policy
-   - fail-closed result
-5. Anchors the manifest with witnesses and external receipts
 
-## Files
+---
 
-- `tools/run_real_qsp_session.py`  
-  Runs and normalizes real QSP output
+## Key property
 
-- `tools/build_session_manifest.py`  
-  Builds `session_manifest.json`
+The evidence is now **directly derived from the protocol execution**.
 
-- `tools/sign_session_manifest.py`  
-  Creates local and checkpoint witnesses
+This removes the gap between:
 
-- `tools/verify_session_anchor.py`  
-  Verifies the complete evidence chain
+- protocol behavior
+- evidence artifacts
 
-- `.github/workflows/stage254-real-qsp-anchor.yml`  
-  Produces GitHub / OTS / cosign anchors
+---
 
-## Local execution
+## How to reproduce (local)
 
 ```bash
-./tools/run_stage254_real_qsp_anchor.sh
-If your real QSP command differs
-
-Set it explicitly:
+cd stage254
 
 export QSP_REAL_REPO=../stage226
-export QSP_REAL_RUN_CMD="python3 tools/run_stage226_poc.py"
+export QSP_REAL_RUN_CMD="python3 poc/run_poc.py"
+
 ./tools/run_stage254_real_qsp_anchor.sh
-Verification
+How to verify (GitHub Actions)
+gh run list --workflow "stage254-real-qsp-anchor"
+
+gh run download <RUN_ID> \
+  -n stage254-real-qsp-anchor-artifacts \
+  -D downloaded_stage254_session_anchor
+
 python3 tools/verify_session_anchor.py \
   --manifest downloaded_stage254_session_anchor/out/session/session_manifest.json \
   --session-result downloaded_stage254_session_anchor/out/session/qsp_session_result.json \
@@ -75,10 +77,40 @@ python3 tools/verify_session_anchor.py \
   --github-receipt downloaded_stage254_session_anchor/out/anchors/github_session_anchor_receipt.json \
   --ots downloaded_stage254_session_anchor/out/session/session_manifest.json.ots \
   --cosign-bundle downloaded_stage254_session_anchor/out/anchors/session_manifest.json.cosign.bundle
+Verification guarantees
+manifest integrity (SHA256)
+transcript binding
+fail-closed result consistency
+witness signatures (local / checkpoint)
+GitHub run binding
+external timestamp (OTS)
+Sigstore transparency (cosign)
+Important note
+
+This stage does NOT introduce a new cryptographic proof.
+
+It strengthens the evidence chain:
+
+QSP execution
+→ manifest
+→ anchors
+→ independent verification
+Why this matters
+
+Previous stages proved:
+
+reproducibility
+transparency
+verifiability
+
+Stage254 proves:
+
+👉 the evidence originates from real protocol execution
+
 Limitations
-The adapter assumes the real QSP implementation emits JSON output
-If your stage226 entrypoint differs, set QSP_REAL_RUN_CMD
-This stage improves evidence integration, not cryptographic claims
+Assumes QSP implementation outputs JSON
+Depends on Stage226 structure
+OTS verification may be pending until blockchain confirmation
 License
 
 MIT License
